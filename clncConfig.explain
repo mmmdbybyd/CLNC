@@ -1,0 +1,223 @@
+clnc-0.4配置文件说明:
+    //开头为注释
+    注释为//开头
+    HTTP请求头关键字(区分大小写): [M] [H] [H_P] [U] [url] [V] use_value(key)
+
+
+
+httoMod模块，对HTTP请求头修改，可定义多个，用于tcpProxy dns httpUDP模块。修改动作从上往下执行
+    关键字(不区分大小写): modify_all_request del_line set_first strrep regerp save_line
+    [modify_all_request = on]，修改读取到的所有请求头，默认是每次读取后，只修改一个请求头
+    [del_line = key]，删除请求头中头域为key的行
+    [save_line = "key" -> "updateTime"]，获取并保存请求头中key头的值，获取间隔时间为uphdateTime分钟
+    [set_first = request_line]，设置请求头中的第一行
+    [regrep = "regex_src_string" -> "regex_dst_string"]，将请求头中的regex_src_string正则表达式替换为regex_dst_string，不区分大小写
+    [strrep = "src_string" -> "dst_string"]，将请求头中的src_string替换为dest_string，比regrep效率高省电，但是区分大小写
+httpMod::http {
+    regrep = "\nHost: *([^\r]*)" -> "\nJ\rHost: \1";
+    del_line = x-online-host;
+    set_first = "[M] [U] [V]\r\nHost: m.client.10010.com\r\n";
+}
+
+
+
+
+
+
+
+
+tcp分为3个模块共同合作:
+    定义tcp::Global模块进行全局TCP配置
+    数据处理流程: 首先通过tcpAcl模块来匹配客户端数据，然后tcpAcl模块指定tcpProxy模块代理，tcpProxy模块可以使用httpMod模块修改请求头
+    客户端数据流入 -> tcpAcl进行匹配 -> tcpProxy模块代理 [-> 指定httpMod模块修改请求头] -> 数据转发到服务端
+为什么这么繁琐？
+    因为这样，不局限于只能分析出HTTP/HTTPS请求，不局限于只能用一个模式，不局限于只能使用一个IP
+    tcpAcl模块可以对数据进行不同的匹配，而不局限于只能区别HTTP/HTTPS，可以根据HTTP请求方法、目标端口、目标IP、来源IP、读取到的数据字符串、HTTP请求头中的头域、URI、URL来指定不同的tcpProxy模块
+    tcpProxy模块可以在tcpProxy模块中指定多个，不局限于只能用一个模式，可以同时使用多个模式，而tcpProxy模块又可以指定多个destAddr，又不局限于只能使用一个IP
+
+
+tcp::Global模块
+    关键字(不区分大小写): tcp_listen maxData_savePath max_sessions tcp_option
+    [tcp_listen = listenIp:listenPort]，监听地址
+    [maxData_savePath = second filePatb]，每隔second秒，将模块最大流量限制信息保存filePatb文件，可在下次启动时读取，达到控制流量的目的(-1将只在关闭时写入)
+    [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
+    [tcp_option = TFO/TDA/TFO|TDA]，对于与客户端会话而言，TFO开启tcp_fastopen，TDA开启tcp_defer_accept，什么作用自己去上网查
+tcp::Global {
+    //监听地址
+    tcp_listen = 0.0.0.0:6650;
+
+    //每600秒将使用流量限制模块的流量信息保存到以下文件
+    //maxData_savePath = 600 TP_usrsData.txt;
+
+    //每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
+    //max_sessions = 2048;
+
+    //tcp_listen选项，TFO开启tcp_fastopen，TDA开启tcp_defer_accept，什么作用自己去上网查
+    //tcp_option = TFO|TDA;
+}
+
+tcpProxy模块,可定义多个
+关键字(不区分大小写): destAddr[4/6] tunnel_proxy tunnel_proxy_header socks5_client socks5_client_auth tunnel_encrypt httpMod tunnelHttpMod httpOverTunnel tcp_option
+    [destAddr[4/6] = hostname:port/original_dst/deny_network]，目标地址(支持域名)，original_dst则使用客户端原来的目标地址，deny_network则直接关闭客户端连接；(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
+    [tunnel_proxy = on/httpOverTunnel]，使用隧道代理(CONNECT)，如果为httpOverTunnel, [H]的值尽量从请求头中获取(即HTTP请求可以直接发送到tcp_listen，而不需要经过iptables或者socks5)
+    [socks5_client = on/username password]，程序作为socks5客户端，发送出去的数据使用一层socks5代理，如果需要使用用户名密码，则将on替换为用户名密码，用户名跟密码之间用一个空格隔开
+    [tunnel_encrypt = password]，cns代理的加密密码
+    [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
+    [tunnelHttpMod = httpMod_moduleName]，指定CONNECT请求修改模块
+    [tcp_option = TFO]，对于发送数据到服务端而言，TFO开启tcp_fastopen
+tcpProxy::name {
+
+}
+
+tcpAcl模块,可定义多个
+自定义TCPACL模块的关键字可以写到tcp::Global模块，然后自定义模块会先获取tcp::Global的值
+配置关键字(不区分大小写): maxSpeed maxData matchMode timeout keepAlive_s reMatch limit_client_ip
+    [timeout = timeout_minute]，超时时间，单位：分，默认0不超时。在tcpAcl::Global模中设置则为分配tcpAcl前的超时，可防止客户端只连接不发送数据导致socket一直占用。
+    [keepAlive_s = second]，设置发送心跳包时间，如果second秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
+    [limit_client_ip = maxIP maxConnection]，同时只能有maxIP个不同的IP连接，每个IP只能有maxConnection个TCP连接，-1表示无限制
+    [maxSpeed = speedNumber]，限制每秒最大网速，默认不限速
+    [maxData = maxDataNumber]，限制最大传输流量，默认不限量，可用于openvpn，每个用户配置不同的请求头，进行实时计费
+    [reMatch = moduleName]，匹配成功后，第一次读取客户端数据重新匹配一次moduleName模块里的规则，匹配成功后使用重新匹配的配置，否则不改变已成功匹配的模块配置。多个moduleName空格隔开。(一般用于firstMatch)
+    [matchMode = [firstMatch/no_auto_match]，firstMatch: 读取客户端前先进行匹配(有些连接是先获取服务端数据才能上网)，只支持src_ip dst_ip dst_port match_all:语法；no_auto_match: 只有在其他模块指定reMatch/include时匹配，没有模块指定则不自动进行匹配
+
+规则关键字(不区分大小写): method hdr_key() uri url dst_ip src_ip dst_ip_byDomain src_ip_byDomain dst_port continue: include_module
+    匹配顺序从上往下，一个模块可以有多个，hdr() uri url string为正则表达式匹配
+    [method [!]= method]，匹配HTTP请求方法，如果需要匹配非HTTP请求则填IS_NOT_HTTP，多个请求方法'|'隔开
+    [reg_string [!]= regex_string]，客户端数据中的字符串
+    [hdr_key(key) [!]= value]_regex_string，key为头域，vakue为头域的值，当key为Host时，会尝试判断SSL流量(不懂SSL协议，实现可能不完美)
+    [uri [!]= uri_regex_string]，请求头中的uri，如果请求行为CONNECT saomeng.club:443 HTTP/1.1则uri为saomeng.club:443
+    [url [!]= url_regex_string]，请求头中的url
+    [dst_port [!]= port[:port]]，客户端的原始目标端口，连续端口用':'连接，一般用于本机主机通过iptables重定向
+    [dst_ip [!]= ip]，客户端的原始目标ip，支持ipv6，支持CIDR表达，一般用于本机主机通过iptables重定向
+    [src_ip [!]= ip]，客户端的来源ip，支持ipv6，支持CIDR表达，一般用于云主机
+    [dst_ip_byDomain]，解析域名的IP来匹配目标IP，支持ipv6，支持CIDR表达
+    [src_ip_byDomain]，解析域名的IP来匹配来源IP，支持ipv6，支持CIDR表达
+    [include_module [!]= moduleName]，复制moduleName模块的规则过来匹配。
+    [continue: hdr_key() | string | uri | url | src_ip | dst_ip | dst_port | include_module [!]= value] ，continue后面接一个匹配规，成功匹配match_all的规则后，继续往下匹配，如果没有成功匹配，则整个tcpAcl匹配失败；相当于一个 && 的效果
+tcpAcl::name {
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+dns分为2个模块共同合作:
+    定义dns::Global模块进行全局DNS配置
+    然后通过dnsAcl模块设置匹配域名以及代理方式
+
+
+dnsGlobal模块
+    关键字(不区分大小写): dns_listen cachePath cacheLimit max_sessions
+    [dns_listen = listenIp:listenPort]，监听地址
+    [cachePath = cacheFile]，开启dns缓存，并且将缓存写入cacheFile路径，如果不需要缓存到文件，则填/dev/null
+    [cacheLimit = 512]，限制缓存条目，简单的处理缓存过期机制，默认不限制
+    [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
+    [timeout = timeout_minute]，超时时间，单位：分，默认1分钟
+dns::dns {
+    dns_listen = 0.0.0.0:6653;
+    cachePath = clnc.dnsCache;
+    cacheLimit = 512;
+}
+
+dnsAcl模块
+    执行顺序从上往下，可以定义多个dnsAcl。dnsAcl不设置reg_domain或者query_type则表示全部请求通过，没有匹配到dnsAcl的请求则丢弃
+    配置关键字(不区分大小写): destAddr header_host http_header tunnel_header tunnel_encrypt httpMod tunnelHttpMod tunnel_proxy lookup_mode max_sessions socks5_set_dst tcp_option
+    [destAddr[4/6] = hostname:port]，目标地址(支持域名)，(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
+    [header_host = HostDomain]，设置请求头中[H]的值
+    [http_header = header]，设置httpDNS的http请求头，结尾必须\r\n\r\n
+    [tunnel_header = header]，设置CONNECT请求头，结尾必须\r\n\r\n
+    [tunnel_encrypt = password]，cns隧道代理加密密码，跟tcpProxy里的作用一样
+    [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
+    [tunnelHttpMod = httpMod_moduleName]，开启tunnel代理并指定CONNECT请求修改模块
+    [tunnel_proxy = on]，开启tunnel代理
+    [lookup_mode = httpDNS/tcpDNS]，设置dns查询模式，默认httpDNS
+    [socks5_set_dst = address [username password]]，开启socks5客户端(destAddr为socks5服务器地址)，这里的address为dns服务器地址，账号密码可选。可以设置多个，负载均衡
+    [tcp_option = TFO]，设置TCP选项，目前只有TFO(tcp_fastopen)
+    规则关键字(不区分大小写, 如果不设置规则表示全部请求通过匹配): reg_domain query_type
+    [reg_domain = regex_string]，设置正则匹配域名，可以设置多个，如果没有设置匹配规则
+    [query_type = dnsTypeStr]，匹配dns类型
+dnsAcl {
+    //这里演示直连httpDNS服务器地址，二级代理参考httpUDP的演示
+    destAddr = 119.29.29.29:80;
+    header_host = m.10010.com;
+    http_header = "[M] [U] [V]\r\nHost: [H]\r\n\r\n";
+    //不设置reg_domain或者query_type则表示全部请求通过
+    //reg_domain = ^example\.com$;
+    //query_type = A;
+    //query_type = AAAA;
+}
+
+
+
+
+
+
+
+
+
+httpUDP模块，udp转为CONNECT特征(所以以下说的http均指CONNECT的情况)，通过服务端的cns代理
+    关键字(不区分大小写): udp_tproxy_listen udp_socks5_listen destAddr header_host http_header tunnel_header encrypt udp_flag httpMod tunnelHttpMod lookup_mode cachePath cacheLimit max_sessions socks5_set_dst timeout tcp_option
+    [udp_tproxy_listen = listenIp:listenPort]，tproxy监听地址，暂时只支持ipv4
+    [udp_socks5_listen = listenIp:listenPort]，socks5监听地址，只监听UDP，如果监听TCP，请使用socks5模块，socks5_listen跟udp_socks5_listen的IP必须一样
+    [destAddr[4/6] = hostname:port]，目标地址(支持域名)，(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
+    [header_host = HostDomain]，设置请求头中[H]的值
+    [http_header = header]，设置http请求头，结尾必须\r\n\r\n
+    [encrypt = password]，cns的加密密码
+    [udp_flag = string]，直连cns服务器的时候，用于cns识别httpUDP请求的标识
+    [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
+    [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
+    [socks5_set_dst = address [username password]]，开启socks5客户端(destAddr为socks5服务器地址)，这里的address为httpUDP服务器地址，账号密码可选。可以设置多个，负载均衡
+    [timeout = timeout_minute]，超时时间，单位：分，默认1分钟
+    [tcp_option = TFO]，设置TCP选项，目前只有TFO(tcp_fastopen)
+httpUDP {
+    udp_tproxy_listen = 0.0.0.0:6650;
+    udp_socks5_listen = 0.0.0.0:6650;
+    //这里演示二级代理，直连服务器参考httpDNS的演示
+    destAddr = 10.0.0.172:80;
+    header_host = 6.6.6.6:80;
+    http_header = "[M] / [V]\r\nJ\rHost: [H]\r\nHost: m.10010.com\r\n\r\n";
+    //直连cns服务器才需要udp_flag
+    //udp_flag = httpUDP;
+    encrypt = password;
+    tcp_option = TFO;
+}
+
+
+
+
+
+
+
+
+//socks5模块，接收客户端的socks5数据，用于将tcp客户端分配到tcp模块处理，udp分配到httpUDP模块处理
+socks5 {
+    //socks5监听地址，如果开启httpUDP，监听IP必须跟udp_socks5_listen一样
+    socks5_listen = 0.0.0.0:1080;
+
+    //socks5的dns查询地址
+    socks5_dns = 114.114.114.114:53;
+
+    //socks5握手超时时间（单位：分），0不超时
+    handshake_timeout = 0;
+
+    //设置发送心跳包时间，如果60秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
+    keepAlive_s = 60;
+
+    //socks5用户名跟密码
+    user_pass = username password;
+
+    //每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
+    //max_sessions = 2048;
+
+    //对于发送数据到客户端而言，TFO开启tcp_fastopen
+    //tcp_option = TFO;
+}
+
