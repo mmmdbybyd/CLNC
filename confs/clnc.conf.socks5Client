@@ -1,0 +1,21 @@
+/*
+    clnc作为socks5客户端配置   例子
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:1082;
+    timeout = 1;
+}
+
+tcpProxy::socks5_proxy {
+    destAddr = 6.6.6.6:1080;
+    socks5_client = on;
+}
+
+tcpAcl::match_all {
+    timeout = -1;
+    matchMode = firstMatch;
+    tcpProxy = socks5_proxy;
+
+    dst_port != 0;
+}

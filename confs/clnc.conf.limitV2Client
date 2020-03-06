@@ -1,0 +1,29 @@
+/*
+    限制v2ray客户端个数   例子
+    clnc监听80
+    v2ray用tcp_http监听8082, 通过客户端的uri区分
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:80;
+    timeout = 5;
+}
+
+tcpProxy::v2ray_tcpHttp {
+    destAddr = 127.0.0.1:8082;
+}
+
+tcpAcl::v2ray_tcpHttp {
+    tcpProxy = v2ray_tcpHttp;
+    //固定客户1的uri为/66666
+    uri = ^/66666;
+    //限制客户端最多可以一个不同IP同时连接，128表示每个IP可以建立128个TCP连接
+    limit_client_ip = 1 128;
+}
+tcpAcl::v2ray_tcpHttp {
+    tcpProxy = v2ray_tcpHttp;
+    //固定客户2的uri为/8888
+    uri = ^/8888;
+    //限制客户端最多可以两个不同IP同时连接，-1表示每个IP可以无限制连接TCP连接
+    limit_client_ip = 2 -1;
+}

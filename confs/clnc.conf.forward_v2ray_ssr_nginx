@@ -1,0 +1,49 @@
+/*
+    80端口同时为v2ray、ssr、nginx服务   例子
+    clnc监听80
+    v2ray_tcpHttp监听8082, path设置为/v2http
+    v2ray_ws监听8082, path设置为/v2ws
+    ssr监听8083, 使用http_simple或者post_simple
+    nginx监听666
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:80;
+    timeout = 5;
+}
+
+tcpProxy::v2ray_tcpHttp {
+    destAddr = 127.0.0.1:8082;
+}
+tcpProxy::v2ray_ws {
+    destAddr = 127.0.0.1:8081;
+}
+tcpProxy::ssr {
+    destAddr = 127.0.0.1:8083;
+}
+tcpProxy::nginx {
+    destAddr = 127.0.0.1:666;
+}
+
+//tcpAcl优先级从上往下，所以优先级为nginx > ssr > v2ray_ws > v2ray_tcp
+tcpAcl::nginx {
+    tcpProxy = nginx;
+    //这里可以设置nginx的多个域名或者uri什么的
+    //匹配成功使用tcpProxy::nginx模块
+    hdr_key(host) = zy1117.top|cutebi.xyz|saomeng.club|psxf.top;
+}
+tcpAcl::ssr {
+    tcpProxy = ssr;
+    //uri为/%开头使用tcpProxy::ssr模块
+    uri = ^/%;
+}
+tcpAcl::v2ray_ws {
+    tcpProxy = v2ray_ws;
+    //uri为/v2ws开头使用tcpProxy::v2ray_ws模块
+    uri = ^/v2ws;
+}
+tcpAcl::v2ray_tcpHttp {
+    tcpProxy = v2ray_tcpHttp;
+    //uri为/v2http开头使用tcpProxy::v2ray_tcpHttp模块
+    uri = ^/v2http;
+}

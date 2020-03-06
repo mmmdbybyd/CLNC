@@ -1,0 +1,53 @@
+/*
+    全局CONNECT代理配置   例子
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:6650;
+    timeout = 1;
+}
+
+httpMod::CONNECT_request_modify {
+    set_first = "[M] m.client.10010.com://[H] [V]\r\nHost: [H]\r\n";
+}
+
+tcpProxy::https_proxy {
+    destAddr = 10.0.0.172:80;
+    tunnel_proxy = httpOverTunnel;
+    tunnelHttpMod = CONNECT_request_modify;
+}
+
+tcpAcl::CONNECT {
+    tcpProxy = https_proxy;
+    method = CONNECT;
+}
+tcpAcl::firstConnect {
+    matchMode = firstMatch;
+    timeout = -1;
+    tcpProxy = https_proxy;
+    //CONNECT不要再加一层代理
+    reMatch = CONNECT;
+
+    dst_port != 0;
+}
+
+dns::Global {
+    dns_listen = 0.0.0.0:6653;
+    cacheLimit = 512;
+    cachePath = /dev/null;
+}
+dnsAcl {
+    destAddr = 10.0.0.172:80;
+    header_host = 114.114.114.114:53;
+    tunnelHttpMod = CONNECT_request_modify;
+    lookup_mode = tcpdns;
+}
+
+//用于接收socks5请求
+socks5::recv_socks5 {
+    socks5_listen = 0.0.0.0:1081;
+    socks5_dns = 127.0.0.1:6653;
+    handshake_timeout = 1;
+}
+
+

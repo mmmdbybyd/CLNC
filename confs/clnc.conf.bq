@@ -1,0 +1,236 @@
+/*
+    破版权配置   例子
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:6650;
+    timeout = 1;
+}
+
+httpMod::gfw_tunnel {
+    set_first = "[M] wap.icu.wo.com.cn [V]\r\nHost: wap.icu.wo.com.cn\r\nMeng: [H]\r\n";
+    del_line = host;
+}
+
+tcpProxy::gfw_proxy {
+    destaddr = [CNS服务器IP]:[服务器PORT];
+    tunnelHttpMod = gfw_tunnel;
+    tunnel_encrypt = [加密密码];
+    tunnel_proxy = on;
+}
+/* 版权列表不代理 */
+tcpProxy::noProxy {
+    destAddr = original_dst;
+}
+
+tcpAcl::firstConnect {
+    tcpProxy = gfw_proxy;
+    //firstMatch超时TCP三次握手后马上连接到tcpProxy::gfw_proxy，reMatch表示读取第一次数据后去匹配tcpAcl::bq_list，如果匹配成功则ACL模块改为tcpAcl::bq_list
+    matchMode = firstMatch;
+    reMatch = bq_list;
+
+    dst_port != 0;
+}
+tcpAcl::bq_list {
+    timeout = -1;
+    tcpProxy = noProxy;
+    
+    hdr_key(host) = 3g.music.qq.com;
+    hdr_key(host) = a.play.api.3g.youku.com;
+    hdr_key(host) = ac.qq.com;
+    hdr_key(host) = acc.music.qq.com;
+    hdr_key(host) = access.tv.sohu.com;
+    hdr_key(host) = aid.video.qq.com;
+    hdr_key(host) = aidbak.video.qq.com;
+    hdr_key(host) = antiserver.kuwo.cn;
+    hdr_key(host) = api.3g.tudou.com;
+    hdr_key(host) = api.3g.youku.com;
+    hdr_key(host) = api.appsdk.soku.com;
+    hdr_key(host) = api.itv.letv.com;
+    hdr_key(host) = api.le.com;
+    hdr_key(host) = api.letv.com;
+    hdr_key(host) = api.live.letv.com;
+    hdr_key(host) = api.mob.app.letv.com;
+    hdr_key(host) = api.tv.itc.cn;
+    hdr_key(host) = api.tv.sohu.com;
+    hdr_key(host) = api.unipay.qq.com;
+    hdr_key(host) = api.www.letv.com;
+    hdr_key(host) = api.youku.com;
+    hdr_key(host) = app.bilibili.com;
+    hdr_key(host) = ark.letv.com;
+    hdr_key(host) = bangumi.bilibili.com;
+    hdr_key(host) = c.y.qq.com;
+    hdr_key(host) = cache.m.iqiyi.com;
+    hdr_key(host) = cache.video.iqiyi.com;
+    hdr_key(host) = cache.video.qiyi.com;
+    hdr_key(host) = cache.vip.iqiyi.com;
+    hdr_key(host) = cache.vip.qiyi.com;
+    hdr_key(host) = cctv1.vtime.cntv.cloudcdn.net;
+    hdr_key(host) = cctv13.vtime.cntv.cloudcdn.net;
+    hdr_key(host) = cctv5.vtime.cntv.cloudcdn.net;
+    hdr_key(host) = cctv5plus.vtime.cntv.cloudcdn.net;
+    hdr_key(host) = chrome.2345.com;
+    hdr_key(host) = client.api.ttpod.com;
+    hdr_key(host) = cloud.vip.xunlei.com;
+    hdr_key(host) = cupid.iqiyi.com;
+    hdr_key(host) = data.bilibili.com;
+    hdr_key(host) = data.video.iqiyi.com;
+    hdr_key(host) = data.video.qiyi.com;
+    hdr_key(host) = dispatcher.video.sina.com.cn;
+    hdr_key(host) = douban.fm;
+    hdr_key(host) = dpool.sina.com.cn;
+    hdr_key(host) = dyn.ugc.pps.tv;
+    hdr_key(host) = dynamic.app.m.letv.com;
+    hdr_key(host) = dynamic.cloud.vip.xunlei.com;
+    hdr_key(host) = dynamic.live.app.m.letv.com;
+    hdr_key(host) = dynamic.meizi.app.m.letv.com;
+    hdr_key(host) = dynamic.search.app.m.letv.com;
+    hdr_key(host) = epg.api.pptv.com;
+    hdr_key(host) = geo.js.kankan.com;
+    hdr_key(host) = hot.vrs.letv.com;
+    hdr_key(host) = hot.vrs.sohu.com;
+    hdr_key(host) = i-play.mobile.youku.com;
+    hdr_key(host) = i.play.api.3g.youku.com;
+    hdr_key(host) = i.y.qq.com;
+    hdr_key(host) = iface.iqiyi.com;
+    hdr_key(host) = iface2.iqiyi.com;
+    hdr_key(host) = info.zb.qq.com;
+    hdr_key(host) = info.zb.video.qq.com;
+    hdr_key(host) = inner.kandian.com;
+    hdr_key(host) = interface.bilibili.com;
+    hdr_key(host) = internal.check.duokanbox.com;
+    hdr_key(host) = ip.apps.cntv.cn;
+    hdr_key(host) = ip.kankan.com;
+    hdr_key(host) = ip.kugou.com;
+    hdr_key(host) = ip2.kugou.com;
+    hdr_key(host) = ipcheck.kuwo.cn;
+    hdr_key(host) = iplocation.geo.iqiyi.com;
+    hdr_key(host) = iplocation.geo.qiyi.com;
+    hdr_key(host) = ipservice.163.com;
+    hdr_key(host) = kandian.com;
+    hdr_key(host) = letv.cn;
+    hdr_key(host) = letv.com;
+    hdr_key(host) = list.youku.com;
+    hdr_key(host) = listso.m.areainfo.ppstream.com;
+    hdr_key(host) = live.api.hunantv.com;
+    hdr_key(host) = live.g3proxy.lecloud.com;
+    hdr_key(host) = live.gslb.letv.com;
+    hdr_key(host) = live.pptv.com;
+    hdr_key(host) = live.tv.sohu.com;
+    hdr_key(host) = lixian.vip.xunlei.com;
+    hdr_key(host) = lixian.xunlei.com;
+    hdr_key(host) = m.letv.com;
+    hdr_key(host) = m10.music.126.net;
+    hdr_key(host) = mobi.kuwo.cn;
+    hdr_key(host) = mobile.api.hunantv.com;
+    hdr_key(host) = mobilefeedback.kugou.com;
+    hdr_key(host) = mqqplayer.3g.qq.com;
+    hdr_key(host) = music.163.com;
+    hdr_key(host) = music.baidu.com;
+    hdr_key(host) = music.sina.com.cn;
+    hdr_key(host) = my.tv.sohu.com;
+    hdr_key(host) = nmobi.kuwo.cn;
+    hdr_key(host) = openapi.youku.com;
+    hdr_key(host) = pad.tv.sohu.com;
+    hdr_key(host) = pay.tudou.com;
+    hdr_key(host) = pay.video.qq.com;
+    hdr_key(host) = pay.youku.com;
+    hdr_key(host) = paybak.video.qq.com;
+    hdr_key(host) = pcweb.api.mgtv.com;
+    hdr_key(host) = pl-ali.youku.com;
+    hdr_key(host) = play-ali.youku.com;
+    hdr_key(host) = play-dxk.youku.com;
+    hdr_key(host) = play.api.3g.tudou.com;
+    hdr_key(host) = play.api.3g.youku.com;
+    hdr_key(host) = play.api.pptv.com;
+    hdr_key(host) = play.baidu.com;
+    hdr_key(host) = play.youku.com;
+    hdr_key(host) = player-pc.le.com;
+    hdr_key(host) = player.pc.le.com;
+    hdr_key(host) = proxy.music.qq.com;
+    hdr_key(host) = proxymc.qq.com;
+    hdr_key(host) = qzs.qq.com;
+    hdr_key(host) = s.plcloud.music.qq.com;
+    hdr_key(host) = search.api.3g.tudou.com;
+    hdr_key(host) = search.api.3g.youku.com;
+    hdr_key(host) = search.lekan.letv.com;
+    hdr_key(host) = serviceinfo.sdk.duomi.com;
+    hdr_key(host) = sns.video.qq.com;
+    hdr_key(host) = so.open.163.com;
+    hdr_key(host) = spark.api.xiami.com;
+    hdr_key(host) = sports1pull.live.wscdns.com;
+    hdr_key(host) = ssports.com;
+    hdr_key(host) = ssports.smgbb.cn;
+    hdr_key(host) = st.live.letv.com;
+    hdr_key(host) = static.api.sports.letv.com;
+    hdr_key(host) = static.itv.letv.com;
+    hdr_key(host) = tingapi.ting.baidu.com;
+    hdr_key(host) = tms.is.ysten.com;
+    hdr_key(host) = tools.aplusapi.pptv.com;
+    hdr_key(host) = tv.api.3g.tudou.com;
+    hdr_key(host) = tv.api.3g.youku.com;
+    hdr_key(host) = tv.weibo.com;
+    hdr_key(host) = ups.youku.com;
+    hdr_key(host) = v.api.hunantv.com;
+    hdr_key(host) = v.api.mgtv.com;
+    hdr_key(host) = v.iask.com;
+    hdr_key(host) = v.pps.tv;
+    hdr_key(host) = v.youku.com;
+    hdr_key(host) = v5.pc.duomi.com;
+    hdr_key(host) = vdn.apps.cntv.cn;
+    hdr_key(host) = vdn.live.cntv.cn;
+    hdr_key(host) = video.qq.com;
+    hdr_key(host) = video.sina.com.cn;
+    hdr_key(host) = video.tudou.com;
+    hdr_key(host) = vip.sports.cntv.cn;
+    hdr_key(host) = vxml.56.com;
+    hdr_key(host) = web-play.pplive.cn;
+    hdr_key(host) = web-play.pptv.com;
+    hdr_key(host) = wtv.v.iask.com;
+    hdr_key(host) = www.bilibili.com;
+    hdr_key(host) = www.iqiyi.com;
+    hdr_key(host) = www.kugou.com;
+    hdr_key(host) = www.kuwo.cn;
+    hdr_key(host) = www.qie.tv;
+    hdr_key(host) = www.soku.com;
+    hdr_key(host) = www.tudou.com;
+    hdr_key(host) = www.xiami.com;
+    hdr_key(host) = www.yinyuetai.com;
+    hdr_key(host) = www.youku.com;
+    hdr_key(host) = zb.s.qq.com;
+    hdr_key(host) = ipip.net;
+    hdr_key(host) = ipinfo.io;
+    hdr_key(host) = ifconfig.co;
+}
+
+dns::Global {
+    dns_listen = 0.0.0.0:6653;
+    cacheLimit = 512;
+    cachePath = /dev/null;
+}
+dnsAcl {
+    destaddr = [服务器IP]:[服务器PORT];
+    header_host = 8.8.8.8:53;
+    tunnelHttpMod = gfw_tunnel;
+    tunnel_encrypt = [加密密码];
+    lookup_mode = tcpDNS;
+}
+
+httpUDP::udp {
+    udp_tproxy_listen = 0.0.0.0:6650;
+    udp_socks5_listen = 0.0.0.0:6651;
+    destaddr = [服务器IP]:[服务器PORT];
+    encrypt = [加密密码];
+    header_host = wap.icu.wo.com.cn;
+    httpMod = gfw_tunnel;
+}
+
+//用于接收socks5请求
+socks5::recv_socks5 {
+    socks5_listen = 0.0.0.0:1081;
+    socks5_dns = 127.0.0.1:6653;
+    handshake_timeout = 1;
+}
+
+
+

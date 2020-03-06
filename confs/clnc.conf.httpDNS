@@ -1,0 +1,15 @@
+/*
+    只开启httpDNS   例子
+*/
+
+dns::Global {
+    dns_listen = 0.0.0.0:6653;
+    cacheLimit = 512;
+    cachePath = /dev/null;
+}
+dnsAcl {
+    //这里可以是CNS的服务器地址
+    destaddr = 119.29.29.29:80;
+    //httpDNS的Host随便设置
+    header_host = m.client.10010.com;
+}

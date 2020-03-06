@@ -1,0 +1,29 @@
+/*
+    socks5转CONNECT代理配置   例子
+*/
+
+tcp::Global {
+    tcp_listen = 0.0.0.0:1082;
+    timeout = 1;
+}
+
+tcpProxy::https_proxy {
+    destAddr = 127.0.0.1:8123;
+    tunnel_proxy = on;
+}
+
+tcpAcl::firstConnect {
+    timeout = -1;
+    matchMode = firstMatch;
+    tcpProxy = https_proxy;
+
+    dst_port != 0;
+}
+
+//用于接收socks5请求
+socks5::recv_socks5 {
+    socks5_listen = 0.0.0.0:1081;
+    socks5_dns = 8.8.8.8:53;
+    handshake_timeout = 1;
+}
+
