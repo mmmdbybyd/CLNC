@@ -46,7 +46,5 @@ Linux网络代理程序, 包括客户端跟服务端, 支持`IPV6`, `tcpFastOpen
 ฅ(• ﻌ •)ฅ  
 暂无bug出现  
   
-##### 编译:  
-~~~~~
-make  
-~~~~~
+##### 下载:  
+https://github.com/mmmdbybyd/CLNC/releases
