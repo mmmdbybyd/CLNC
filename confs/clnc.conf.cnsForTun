@@ -1,0 +1,61 @@
+/*
+    配合服务器cns配置，从tun读取数据   例子，只需要修改[]的内容
+*/
+
+Tun {
+    tunAddr4 = 10.0.0.1;
+    tunAddr6 = fc00::1;
+    tunMtu = 1500;
+    tunDevice = tunDev;
+}
+
+tcp::Global {
+    timeout = 60;
+}
+
+httpMod::clns_https_request {
+    del_line = host;
+
+    //伪装成CONNECT
+    set_first = "[M] dm.toutiao.com [V]\r\nHost: m.client.10010.com\r\nMeng: [H]\r\n";
+
+    //伪装成POST
+    //set_first = "POST http://dm.toutiao.com/ [V]\r\nHost: m.client.10010.com\r\nMeng: [H]\r\n";
+
+    //伪装成WS
+    //set_first = "GET /ws HTTP/1.1\r\nMeng: [H]\r\nHost: dm.toutiao.com\r\nConnection: Upgrade\r\nSec-WebSocket-Key: Cute Linux Network\r\nSec-WebSocket-Version: 13\r\nUpgrade: websocket\r\nOrigin: http://dm.toutiao.com/\r\n";
+}
+
+tcpProxy::https_proxy {
+    destAddr = [服务器IP]:[服务器端口];
+    tunnel_encrypt = [加密密码];
+    tunnel_proxy = on;
+    tunnelHttpMod = clns_https_request;
+}
+
+tcpAcl::firstConnect {
+    tcpProxy = https_proxy;
+    matchMode = firstMatch;
+    timeout = -1;
+
+    dst_port != 0;
+}
+
+dns::Global {
+    cacheLimit = 512;
+    cachePath = /dev/null;
+}
+dnsAcl {
+    destaddr = [服务器IP]:[服务器PORT];
+    header_host = 8.8.8.8:53;
+    tunnelHttpMod = clns_https_request;
+    tunnel_encrypt = [加密密码];
+    lookup_mode = tcpDNS;
+}
+
+httpUDP::udp {
+    destAddr = [服务器IP]:[服务器端口];
+    encrypt = [加密密码];
+    header_host = dm.toutiao.com;
+    httpMod = clns_https_request;
+}

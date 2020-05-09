@@ -1,5 +1,5 @@
 /*
-    普通免流   例子，只需要修改HTTP/HTTPS代理IP跟模式
+    普通免流   例子，只需要修改HTTP/HTTPS代理IP跟模式(可作为wap模式)
 */
 
 tcp::Global {
@@ -9,8 +9,7 @@ tcp::Global {
 //HTTPS模式
 httpMod::tunnel {
     del_line = host;
-    set_first = "[M] [H] [V]\r\nHost: [H]\r\nProxy-Authorization: Basic dWMxMC43LjE2My4xNDQ6MWY0N2QzZWY1M2IwMzU0NDM0NTFjN2VlNzg3M2ZmMzg=
-\r\n";
+    set_first = "[M] [H] [V]\r\nHost: [H]\r\nProxy-Authorization: Basic dWMxMC43LjE2My4xNDQ6MWY0N2QzZWY1M2IwMzU0NDM0NTFjN2VlNzg3M2ZmMzg=\r\n";
 }
 //HTTP模式
 httpMod::http {
@@ -30,33 +29,26 @@ tcpProxy::https_proxy {
     tunnel_proxy = on;
 }
 
-//非80 8080端口先建立CONNECT连接
+//ssh端口和ssl端口先建立CONNECT连接
 tcpAcl::firstConnect {
     tcpProxy = https_proxy;
     matchMode = firstMatch;
     //如果请求为HTTP请求，则重新建立连接
     reMatch = CONNECT http;
     
-    continue: dst_port != 80;
-    continue: dst_port != 8080;
-    dst_port != 6650;
+    dst_port = 22;
+    dst_port = 443;
 }
-//匹配CONNECT请求
+//匹配普通http请求
+tcpAcl::http {
+    tcpProxy = http_proxy;
+    continue: method != IS_NOT_HTTP;
+    reg_string != WebSocket;
+}
+//其他请求使用CONNECT代理
 tcpAcl::CONNECT {
     tcpProxy = https_proxy;
-    method = CONNECT;
-}
-//匹配普通http请求
-tcpAcl::http {
-    tcpProxy = http_proxy;
-    reg_string != WebSocket;
-    continue: method != IS_NOT_HTTP;
-}
-//匹配普通http请求
-tcpAcl::http {
-    tcpProxy = http_proxy;
-    continue: method != IS_NOT_HTTP;
-    reg_string != WebSocket;
+    dst_port != 0;
 }
 
 
@@ -77,8 +69,8 @@ dnsAcl {
     httpMod = tunnel;
     //HTTP tunnel代理地址
     destAddr = 101.71.140.5:8128;
-    //UC的tunnel只支持443端口，所以转给了自己搭建的443端口dns服务器
-    header_host = 118.24.0.108:433;
+    //UC的tunnel只支持443端口，所以这里使用opendns的443解析
+    header_host = 208.67.222.222:433;
     lookup_mode = tcpDNS;
 }
 
@@ -86,5 +78,5 @@ dnsAcl {
 socks5::recv_socks5 {
     socks5_listen = 0.0.0.0:1881;
     socks5_dns = 127.0.0.1:6653;
-    handshake_timeout = 1;
+    handshake_timeout = 60;
 }
