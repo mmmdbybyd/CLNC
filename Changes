@@ -35,3 +35,19 @@
     httpUDP改为单线程处理，以前双线程处理可能还不如单线程
     监听端口使用SO_REUSEPORT，多进程下性能有所提升
 
+0.6
+    修改启动命令-u为-g，指定运行uid改为指定运行gid(如果出现问题请联系)
+    修复dns在某些情况下崩溃
+    添加fake dns功能，请务必把fake dns的域名作为http/tunnel代理。
+        fake dns优点: 加快响应速度
+        fake dns缺点:
+            1. 当客户端dns经过fake dns而TCP不经过核心的http/tunnel处理时，有可能无网
+            2. 当关闭核心后可能系统还存在dns缓存，可能有短暂的断网
+            3. 当fake dns返回的IP与另一个TCP连接的IP刚好一样时，会出现代理不上的情况
+    添加dns缓存的ttl检查
+    timeout语法的单位从分变为秒(检测频率为10s)
+    稍微减少TCP代理内存的动态申请和释放
+    修正从dns回应中读取IP的代码
+    修复httpUDP发送到服务器出错的时候不清理变量的问题
+    添加tun支持，只能单进程，测试阶段，可能会有问题(感谢家住大海提供lwip的使用方法)
+    httpUDP的tproxy添加ipv6支持
