@@ -1,4 +1,4 @@
-clnc-0.4配置文件说明:
+clnc-0.7配置文件说明:
     //开头为注释
     注释为//开头
     HTTP请求头关键字(区分大小写): [M] [H] [H_P] [U] [url] [V] use_value(key)
@@ -57,11 +57,12 @@ tcp::Global {
 }
 
 tcpProxy模块,可定义多个
-关键字(不区分大小写): destAddr[4/6] tunnel_proxy tunnel_proxy_header socks5_client socks5_client_auth tunnel_encrypt httpMod tunnelHttpMod httpOverTunnel tcp_option
+关键字(不区分大小写): destAddr[4/6] tunnel_proxy tunnel_proxy_header socks5_client socks5_client_auth tunnel_encrypt tls_client httpMod tunnelHttpMod httpOverTunnel tcp_option
     [destAddr[4/6] = hostname:port/original_dst/deny_network]，目标地址(支持域名)，original_dst则使用客户端原来的目标地址，deny_network则直接关闭客户端连接；(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
     [tunnel_proxy = on/httpOverTunnel]，使用隧道代理(CONNECT)，如果为httpOverTunnel, [H]的值尽量从请求头中获取(即HTTP请求可以直接发送到tcp_listen，而不需要经过iptables或者socks5)
     [socks5_client = on/username password]，程序作为socks5客户端，发送出去的数据使用一层socks5代理，如果需要使用用户名密码，则将on替换为用户名密码，用户名跟密码之间用一个空格隔开
     [tunnel_encrypt = password]，cns代理的加密密码
+    [tls_client = tls_host]，开启tls并设置tls的Host为tls_host(tcp_option不能开启TFO)
     [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
     [tunnelHttpMod = httpMod_moduleName]，指定CONNECT请求修改模块
     [tcp_option = TFO]，对于发送数据到服务端而言，TFO开启tcp_fastopen
@@ -72,7 +73,7 @@ tcpProxy::name {
 tcpAcl模块,可定义多个
 自定义TCPACL模块的关键字可以写到tcp::Global模块，然后自定义模块会先获取tcp::Global的值
 配置关键字(不区分大小写): maxSpeed maxData matchMode timeout keepAlive_s reMatch limit_client_ip
-    [timeout = timeout_minute]，超时时间，单位：分，默认0不超时。在tcpAcl::Global模中设置则为分配tcpAcl前的超时，可防止客户端只连接不发送数据导致socket一直占用。
+    [timeout = timeout_second]，超时时间，单位：秒，默认0不超时。在tcpAcl::Global模中设置则为分配tcpAcl前的超时，可防止客户端只连接不发送数据导致socket一直占用。
     [keepAlive_s = second]，设置发送心跳包时间，如果second秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
     [limit_client_ip = maxIP maxConnection]，同时只能有maxIP个不同的IP连接，每个IP只能有maxConnection个TCP连接，-1表示无限制
     [maxSpeed = speedNumber]，限制每秒最大网速，默认不限速
@@ -120,7 +121,7 @@ dnsGlobal模块
     [cachePath = cacheFile]，开启dns缓存，并且将缓存写入cacheFile路径，如果不需要缓存到文件，则填/dev/null
     [cacheLimit = 512]，限制缓存条目，简单的处理缓存过期机制，默认不限制
     [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
-    [timeout = timeout_minute]，超时时间，单位：分，默认1分钟
+    [timeout = timeout_second]，超时时间，单位：秒，默认15秒
 dns::dns {
     dns_listen = 0.0.0.0:6653;
     cachePath = clnc.dnsCache;
@@ -129,12 +130,13 @@ dns::dns {
 
 dnsAcl模块
     执行顺序从上往下，可以定义多个dnsAcl。dnsAcl不设置reg_domain或者query_type则表示全部请求通过，没有匹配到dnsAcl的请求则丢弃
-    配置关键字(不区分大小写): destAddr header_host http_header tunnel_header tunnel_encrypt httpMod tunnelHttpMod tunnel_proxy lookup_mode max_sessions socks5_set_dst tcp_option
+    配置关键字(不区分大小写): destAddr header_host http_header tunnel_header tunnel_encrypt tls_host httpMod tunnelHttpMod tunnel_proxy lookup_mode max_sessions socks5_set_dst tcp_option
     [destAddr[4/6] = hostname:port]，目标地址(支持域名)，(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
     [header_host = HostDomain]，设置请求头中[H]的值
     [http_header = header]，设置httpDNS的http请求头，结尾必须\r\n\r\n
     [tunnel_header = header]，设置CONNECT请求头，结尾必须\r\n\r\n
     [tunnel_encrypt = password]，cns隧道代理加密密码，跟tcpProxy里的作用一样
+    [tls_client = tls_host]，开启tls并设置tls的Host为tls_host(tcp_option不能开启TFO)
     [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
     [tunnelHttpMod = httpMod_moduleName]，开启tunnel代理并指定CONNECT请求修改模块
     [tunnel_proxy = on]，开启tunnel代理
@@ -154,7 +156,13 @@ dnsAcl {
     //query_type = A;
     //query_type = AAAA;
 }
-
+dnsAcl {
+    //这里演示tlsDNS
+    destAddr = 1.1.1.1:853;
+    //开启tls
+    tls_client = 1.1.1.1;
+    lookup_mode = tcpDNS;
+}
 
 
 
@@ -164,18 +172,20 @@ dnsAcl {
 
 
 httpUDP模块，udp转为CONNECT特征(所以以下说的http均指CONNECT的情况)，通过服务端的cns代理
-    关键字(不区分大小写): udp_tproxy_listen udp_socks5_listen destAddr header_host http_header tunnel_header encrypt udp_flag httpMod tunnelHttpMod lookup_mode cachePath cacheLimit max_sessions socks5_set_dst timeout tcp_option
+    关键字(不区分大小写): udp_tproxy_listen udp_socks5_listen destAddr header_host http_header tunnel_header encrypt tls_client udp_flag httpMod tunnelHttpMod lookup_mode cachePath cacheLimit max_sessions socks5_set_dst timeout tcp_option tunnel_proxy
     [udp_tproxy_listen = listenIp:listenPort]，tproxy监听地址，暂时只支持ipv4
     [udp_socks5_listen = listenIp:listenPort]，socks5监听地址，只监听UDP，如果监听TCP，请使用socks5模块，socks5_listen跟udp_socks5_listen的IP必须一样
     [destAddr[4/6] = hostname:port]，目标地址(支持域名)，(可定义多个，轮询负载均衡)；destAddr4只使用ipv4，destAddr6只使用ipv6，destAddr使用ipv6+ipv4
     [header_host = HostDomain]，设置请求头中[H]的值
     [http_header = header]，设置http请求头，结尾必须\r\n\r\n
+    [send_http = on]，发送http请求头，目的是为了设置http、socks5、tls的发送顺序
     [encrypt = password]，cns的加密密码
+    [tls_client = tls_host]，开启tls并设置tls的Host为tls_host(tcp_option不能开启TFO)
     [udp_flag = string]，直连cns服务器的时候，用于cns识别httpUDP请求的标识
     [httpMod = httpMod_moduleName]，指定HTTP请求修改模块
     [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
     [socks5_set_dst = address [username password]]，开启socks5客户端(destAddr为socks5服务器地址)，这里的address为httpUDP服务器地址，账号密码可选。可以设置多个，负载均衡
-    [timeout = timeout_minute]，超时时间，单位：分，默认1分钟
+    [timeout = timeout_second]，超时时间，单位：秒，默认30秒
     [tcp_option = TFO]，设置TCP选项，目前只有TFO(tcp_fastopen)
 httpUDP {
     udp_tproxy_listen = 0.0.0.0:6650;
@@ -205,7 +215,7 @@ socks5 {
     //socks5的dns查询地址
     socks5_dns = 114.114.114.114:53;
 
-    //socks5握手超时时间（单位：分），0不超时
+    //socks5握手超时时间（单位：秒），0不超时
     handshake_timeout = 0;
 
     //设置发送心跳包时间，如果60秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
@@ -221,3 +231,31 @@ socks5 {
     //tcp_option = TFO;
 }
 
+
+
+
+
+
+
+
+//tun模块，从tun读取数据，将UDP DNS TCP分配到各个协议模块
+Tun {
+    //tun网卡的IPV4地址
+    tunAddr4 = 10.0.0.1;
+    
+    //tun网卡的IPV6地址
+    tunAddr6 = fc00::1;
+
+    //tun网卡的mtu，默认1500
+    tunMtu = 1500;
+
+    //tun网卡的queue_len，默认3000
+    tunQLen = 3000;
+
+    //tun网卡名称，路径(默认/dev/net/tun)
+    //tunDevice = tun0;
+    tunDevice = tun0 /dev/tun;
+
+    //通过unix socket获取tunFd，可以从其他进程创建tun后把fd传给clnc处理。使用此参数后。注意：开启该选项后以上所有参数将不生效
+    rcvTunFdPath = unix socket path;
+}

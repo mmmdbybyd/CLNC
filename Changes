@@ -51,3 +51,14 @@
     修复httpUDP发送到服务器出错的时候不清理变量的问题
     添加tun支持，只能单进程，测试阶段，可能会有问题(感谢家住大海提供lwip的使用方法)
     httpUDP的tproxy添加ipv6支持
+
+0.7
+    修复超时检测卡死的bug
+    删除httpDNS将ipv4映射成ipv6返回的功能
+    httpDNS添加ipv6和ttl查询功能
+    fake dns改为只使用内网IP段
+    各模块的socks5更加完善
+    添加tls伪装支持
+    socks5 tls tunnel代理会按照语法顺序逐个代理
+    为了支持socks5 tls tunnel的代理顺序，httpUDP模块添加send_http语法
+
