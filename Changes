@@ -60,5 +60,9 @@
     各模块的socks5更加完善
     添加tls伪装支持
     socks5 tls tunnel代理会按照语法顺序逐个代理
-    为了支持socks5 tls tunnel的代理顺序，httpUDP模块添加send_http语法
 
+0.7.1
+    修复epoll_wait()timeout的值与理想中的值不一致
+    修复Host中包含端口的时候，[H_P]语法多出一个端口的bug
+    删除命令行参数-w，只有单进程处理
+    fake dns还未完善
