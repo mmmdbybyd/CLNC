@@ -4,7 +4,7 @@
 
 tcp::Global {
     tcp_listen = 0.0.0.0:1082;
-    timeout = 1;
+    timeout = 600;
 }
 
 tcpProxy::socks5_proxy {

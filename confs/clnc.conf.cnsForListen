@@ -38,7 +38,6 @@ tcpAcl::firstConnect {
 
 dns::Global {
     dns_listen = 0.0.0.0:6653;
-    cacheLimit = 512;
     cachePath = /dev/null;
 }
 dnsAcl {

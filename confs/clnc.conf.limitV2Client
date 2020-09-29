@@ -6,7 +6,7 @@
 
 tcp::Global {
     tcp_listen = 0.0.0.0:80;
-    timeout = 5;
+    timeout = 60;
 }
 
 tcpProxy::v2ray_tcpHttp {

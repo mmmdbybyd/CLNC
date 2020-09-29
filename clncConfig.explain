@@ -1,4 +1,4 @@
-clnc-0.7配置文件说明:
+clnc-0.8配置文件说明:
     //开头为注释
     注释为//开头
     HTTP请求头关键字(区分大小写): [M] [H] [H_P] [U] [url] [V] use_value(key)
@@ -72,9 +72,9 @@ tcpProxy::name {
 
 tcpAcl模块,可定义多个
 自定义TCPACL模块的关键字可以写到tcp::Global模块，然后自定义模块会先获取tcp::Global的值
-配置关键字(不区分大小写): maxSpeed maxData matchMode timeout keepAlive_s reMatch limit_client_ip
+配置关键字(不区分大小写): maxSpeed maxData matchMode timeout keepAlive reMatch limit_client_ip
     [timeout = timeout_second]，超时时间，单位：秒，默认0不超时。在tcpAcl::Global模中设置则为分配tcpAcl前的超时，可防止客户端只连接不发送数据导致socket一直占用。
-    [keepAlive_s = second]，设置发送心跳包时间，如果second秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
+    [keepAlive = second]，设置发送心跳包时间，如果second秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout更和谐。默认60秒
     [limit_client_ip = maxIP maxConnection]，同时只能有maxIP个不同的IP连接，每个IP只能有maxConnection个TCP连接，-1表示无限制
     [maxSpeed = speedNumber]，限制每秒最大网速，默认不限速
     [maxData = maxDataNumber]，限制最大传输流量，默认不限量，可用于openvpn，每个用户配置不同的请求头，进行实时计费
@@ -82,7 +82,7 @@ tcpAcl模块,可定义多个
     [matchMode = [firstMatch/no_auto_match]，firstMatch: 读取客户端前先进行匹配(有些连接是先获取服务端数据才能上网)，只支持src_ip dst_ip dst_port match_all:语法；no_auto_match: 只有在其他模块指定reMatch/include时匹配，没有模块指定则不自动进行匹配
 
 规则关键字(不区分大小写): method hdr_key() uri url dst_ip src_ip dst_ip_byDomain src_ip_byDomain dst_port continue: include_module
-    匹配顺序从上往下，一个模块可以有多个，hdr() uri url string为正则表达式匹配
+    匹配顺序从上往下，一个模块可以有多个，hdr_key() uri url string为正则表达式匹配
     [method [!]= method]，匹配HTTP请求方法，如果需要匹配非HTTP请求则填IS_NOT_HTTP，多个请求方法'|'隔开
     [reg_string [!]= regex_string]，客户端数据中的字符串
     [hdr_key(key) [!]= value]_regex_string，key为头域，vakue为头域的值，当key为Host时，会尝试判断SSL流量(不懂SSL协议，实现可能不完美)
@@ -91,8 +91,8 @@ tcpAcl模块,可定义多个
     [dst_port [!]= port[:port]]，客户端的原始目标端口，连续端口用':'连接，一般用于本机主机通过iptables重定向
     [dst_ip [!]= ip]，客户端的原始目标ip，支持ipv6，支持CIDR表达，一般用于本机主机通过iptables重定向
     [src_ip [!]= ip]，客户端的来源ip，支持ipv6，支持CIDR表达，一般用于云主机
-    [dst_ip_byDomain]，解析域名的IP来匹配目标IP，支持ipv6，支持CIDR表达
-    [src_ip_byDomain]，解析域名的IP来匹配来源IP，支持ipv6，支持CIDR表达
+    [dst_ip_byDomain [i]= domain]，解析域名的IP来匹配目标IP，支持ipv6，支持CIDR表达
+    [src_ip_byDomain [i]= domain]，解析域名的IP来匹配来源IP，支持ipv6，支持CIDR表达
     [include_module [!]= moduleName]，复制moduleName模块的规则过来匹配。
     [continue: hdr_key() | string | uri | url | src_ip | dst_ip | dst_port | include_module [!]= value] ，continue后面接一个匹配规，成功匹配match_all的规则后，继续往下匹配，如果没有成功匹配，则整个tcpAcl匹配失败；相当于一个 && 的效果
 tcpAcl::name {
@@ -116,16 +116,14 @@ dns分为2个模块共同合作:
 
 
 dnsGlobal模块
-    关键字(不区分大小写): dns_listen cachePath cacheLimit max_sessions
+    关键字(不区分大小写): dns_listen cachePath max_sessions
     [dns_listen = listenIp:listenPort]，监听地址
     [cachePath = cacheFile]，开启dns缓存，并且将缓存写入cacheFile路径，如果不需要缓存到文件，则填/dev/null
-    [cacheLimit = 512]，限制缓存条目，简单的处理缓存过期机制，默认不限制
     [max_sessions = number]，每个进程可以同时处理的会话数目，默认1024(个人感觉日常已经够用了)
     [timeout = timeout_second]，超时时间，单位：秒，默认15秒
 dns::dns {
     dns_listen = 0.0.0.0:6653;
     cachePath = clnc.dnsCache;
-    cacheLimit = 512;
 }
 
 dnsAcl模块
@@ -218,7 +216,7 @@ socks5 {
     //socks5握手超时时间（单位：秒），0不超时
     handshake_timeout = 0;
 
-    //设置发送心跳包时间，如果60秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比timeout_count更和谐。默认60秒
+    //设置发送心跳包时间，如果60秒内TCP连接没有数据传输，则发送心跳包判断TCP会话是否异常。这比handshake_timeout更和谐。默认60秒
     keepAlive_s = 60;
 
     //socks5用户名跟密码
@@ -244,7 +242,7 @@ Tun {
     tunAddr4 = 10.0.0.1;
     
     //tun网卡的IPV6地址
-    tunAddr6 = fc00::1;
+    tunAddr6 = fe80::1;
 
     //tun网卡的mtu，默认1500
     tunMtu = 1500;

@@ -29,6 +29,8 @@ httpMod::clns_https_request {
 tcpProxy::https_proxy {
     destAddr = [服务器IP]:[服务器端口];
     tunnel_encrypt = [加密密码];
+    //tls_client语法必须在tunnel_proxy前面
+    tls_client = [tls伪装域名];
     tunnel_proxy = on;
     tunnelHttpMod = clns_https_request;
 }
@@ -47,6 +49,8 @@ dns::Global {
 dnsAcl {
     destaddr = [服务器IP]:[服务器PORT];
     header_host = 8.8.8.8:53;
+    //tls_client语法必须在tunnel_proxy/tunnelHttpMod前面
+    tls_client = [tls伪装域名];
     tunnelHttpMod = clns_https_request;
     tunnel_encrypt = [加密密码];
     lookup_mode = tcpDNS;
@@ -55,6 +59,7 @@ dnsAcl {
 httpUDP::udp {
     destAddr = [服务器IP]:[服务器端口];
     encrypt = [加密密码];
+    tls_client = [tls伪装域名];
     header_host = dm.toutiao.com;
     httpMod = clns_https_request;
 }

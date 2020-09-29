@@ -4,7 +4,7 @@
 
 tcp::Global {
     tcp_listen = 0.0.0.0:1082;
-    timeout = 1;
+    timeout = 600;
 }
 
 tcpProxy::https_proxy {
@@ -24,6 +24,6 @@ tcpAcl::firstConnect {
 socks5::recv_socks5 {
     socks5_listen = 0.0.0.0:1081;
     socks5_dns = 8.8.8.8:53;
-    handshake_timeout = 1;
+    handshake_timeout = 600;
 }
 

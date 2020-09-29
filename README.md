@@ -1,7 +1,7 @@
 CuteBi Linux Network Client  
 ======  
 Linux网络代理程序, 包括客户端跟服务端, 支持`IPV6`, `tcpFastOpen`, `UDP_Over_HttpTunnel`(需要配合CNS服务端)  
-服务端CNS: https://github.com/mmmdbybyd/CNS
+服务端: [CNS](https://github.com/mmmdbybyd/CNS)
 
 单独使用客户端:  
 --------
@@ -43,9 +43,23 @@ Linux网络代理程序, 包括客户端跟服务端, 支持`IPV6`, `tcpFastOpen
 ##### BUG:  
 　/) /)  
 ฅ(• ﻌ •)ฅ  
-修改请求头部分可能会崩溃的  
+暂无发现bug  
   
 ##### 编译:  
 ~~~~~
 make  
 ~~~~~
+
+##### 配置文件例子:  
+[版权放行](confs/clnc.conf.bq)  
+[不代理国内IP地址](confs/clnc.conf.ch_bypass)  
+[nat版cns](confs/clnc.conf.cnsForListen)  
+[tun版cns](confs/clnc.conf.cnsForTun)  
+[tun版cns+tls](confs/clnc.conf.cnsTlsForListen)  
+[同端口分流v2 ssr nginx](confs/clnc.conf.forward_v2ray_ssr_nginx)  
+[全局CONNECT](confs/clnc.conf.globalCONNECT)  
+[只开启httpDNS](confs/clnc.conf.httpDNS)  
+[限制v2客户端数目](confs/clnc.conf.limitV2Client)  
+[免流](confs/clnc.conf.ml)  
+[socks5客户端](confs/clnc.conf.socks5Client)  
+[socks5转CONNECT](confs/clnc.conf.socks5ToCONNECT)  

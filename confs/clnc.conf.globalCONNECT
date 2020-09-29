@@ -4,7 +4,7 @@
 
 tcp::Global {
     tcp_listen = 0.0.0.0:6650;
-    timeout = 1;
+    timeout = 60;
 }
 
 httpMod::CONNECT_request_modify {
@@ -33,7 +33,6 @@ tcpAcl::firstConnect {
 
 dns::Global {
     dns_listen = 0.0.0.0:6653;
-    cacheLimit = 512;
     cachePath = /dev/null;
 }
 dnsAcl {

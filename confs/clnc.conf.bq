@@ -4,7 +4,7 @@
 
 tcp::Global {
     tcp_listen = 0.0.0.0:6650;
-    timeout = 1;
+    timeout = 60;
 }
 
 httpMod::gfw_tunnel {
@@ -205,7 +205,6 @@ tcpAcl::bq_list {
 
 dns::Global {
     dns_listen = 0.0.0.0:6653;
-    cacheLimit = 512;
     cachePath = /dev/null;
 }
 dnsAcl {
@@ -229,7 +228,7 @@ httpUDP::udp {
 socks5::recv_socks5 {
     socks5_listen = 0.0.0.0:1081;
     socks5_dns = 127.0.0.1:6653;
-    handshake_timeout = 1;
+    handshake_timeout = 60;
 }
 
 

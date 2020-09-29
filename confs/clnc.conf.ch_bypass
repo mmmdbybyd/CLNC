@@ -9,7 +9,6 @@ tcp::Global {
 }
 dns::Global {
     dns_listen = 0.0.0.0:6653;
-    cacheLimit = 512;
     cachePath = /dev/null;
 }
 
@@ -27,6 +26,7 @@ tcpProxy::CHtp0 {
     tunnelHttpMod = CHtunnel0;
     tunnel_encrypt = [CNS密码];
 }
+
 // 在国外服务器的cns的http请求头
 httpMod::tunnel0 {
     del_line = host;;
@@ -40,6 +40,7 @@ tcpProxy::tp0 {
     tunnelHttpMod = tunnel0;
     tunnel_encrypt = [CNS密码];
 }
+
 // tcpAcl匹配中国IP，如果匹配成功则使用tcpProxy::CHtp0模块
 tcpAcl::CH_ips {
     //这一句表示TCP三次握手完成后马上匹配
@@ -7331,7 +7332,7 @@ dnsAcl {
 // 如果不是中国域名列表，则使用国外服务器解析
 dnsAcl {
     destAddr = [CNS国外服务器IP]:[CNS端口];
-    header_host = 80.80.80.80:53;
+    header_host = 8.8.8.8:53;
     tunnelHttpMod = tunnel0;
     tunnel_encrypt = [CNS密码];
     lookup_mode = tcpDNS;

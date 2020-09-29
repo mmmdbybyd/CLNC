@@ -66,3 +66,14 @@
     修复Host中包含端口的时候，[H_P]语法多出一个端口的bug
     删除命令行参数-w，只有单进程处理
     fake dns还未完善
+
+0.8
+    修复tun处理[UDP小包/TCP超时]崩溃的bug
+    修复tun处理TCP可能存在不工作的bug
+    修复tun的TCP设置keepalive与实际不符的bug
+    解析模式destAddr的域名时，增加dns缓存
+    删除dns模块cacheLimit语法
+    dns缓存使用uthash记录, 缓存文件与之前的版本不通用
+    完善dns缓存的ttl
+    fake dns还未完善
+    reMatch语法重新分配tcpAcl的时候, 如果目标地址一样并且没有传输过任何数据则不会重新连接目标地址
