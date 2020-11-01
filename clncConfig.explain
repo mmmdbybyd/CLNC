@@ -1,7 +1,14 @@
-clnc-0.8配置文件说明:
+clnc-0.8.1配置文件说明:
     //开头为注释
     注释为//开头
     HTTP请求头关键字(区分大小写): [M] [H] [H_P] [U] [url] [V] use_value(key)
+        [M] : 请求方法
+        [H] : 请求host
+        [H_P] : 请求host, 端口以TCP/IP第四层的目标端口为准，开启tunnel_proxy则不生效
+        [U] : 请求uri
+        [url] : 请求url
+        [V] : HTTP版本
+        use_value(key) : 替换save_line保存的值
 
 
 
@@ -243,6 +250,9 @@ Tun {
     
     //tun网卡的IPV6地址
     tunAddr6 = fe80::1;
+
+    //tun网卡的子网掩码
+    tunMask = 255.255.255.0;
 
     //tun网卡的mtu，默认1500
     tunMtu = 1500;

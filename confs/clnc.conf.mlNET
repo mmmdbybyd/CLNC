@@ -4,13 +4,13 @@
 
 #######UDP部分########
 //httpUDP::udp {
-    //如果搭建了cns服务器可以删除下一行的注释(尽量搭建不要443端口)
+    //如果搭建了cns服务器可以删除下一行的注释
     //udp_socks5_listen = 0.0.0.0:1081
     //udp_tproxy_listen = 0.0.0.0:6650;
-    //destaddr = 180.97.104.45:443;
+    //destaddr = 服务器IP:服务器端口:;
     httpMod = tunnel;
     encrypt = 加密密码;
-    header_host = 服务器IP:服务器端口;
+    header_host = wap.10010.com;
 }
 
 
@@ -31,7 +31,7 @@ httpMod::http {
 
 tcpProxy::http_proxy {
     //HTTP代理地址
-    destaddr = 180.97.104.45:443;
+    destaddr = original_dst;
     httpMod = http;
 }
 tcpProxy::https_proxy {
@@ -74,8 +74,8 @@ dns::Global {
 dnsAcl {
     httpMod = http;
     //HTTP代理地址
-    destaddr = 180.97.104.45:443;
-    header_host = 119.29.29.29;
+    destaddr = 119.29.29.29:80;
+    header_host = wap.10010.com;
     query_type = A;
     query_type = AAAA;
 }
