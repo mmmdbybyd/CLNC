@@ -81,3 +81,9 @@
 0.8.1
     添加tunMask设置
     关闭目标地址socket的时候直接发送RST, 减少数据包发送, tun模式下还有更好的兼容性
+
+0.9
+    tun路径默认为/dev/net/tun或者/dev/tun(智能选择)
+    修改dns解析，解析失败也返回Name Error(修复部分模式用久了系统dns不工作)
+    修改dns缓存最少缓存一周
+    优化httpUDP
