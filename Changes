@@ -87,3 +87,14 @@
     修改dns解析，解析失败也返回Name Error(修复部分模式用久了系统dns不工作)
     修改dns缓存最少缓存一周
     优化httpUDP
+
+0.9.1
+    修复dns的socks5无法代理
+
+0.9.2
+    修复UDP的socks5无法代理
+    修复TCPDNS缓存可能导致崩溃
+
+1.0
+    自动获取系统dnsIP，用于初始化配置时解析域名
+    修复httpDNS解析ipv6时崩溃的现象
