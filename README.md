@@ -64,3 +64,7 @@ make
 [免流](confs/clnc.conf.ml)  
 [socks5客户端](confs/clnc.conf.socks5Client)  
 [socks5转CONNECT](confs/clnc.conf.socks5ToCONNECT)  
+
+##### AFF:  
+快游戏机场：https://www.quick-connect.top  
+
